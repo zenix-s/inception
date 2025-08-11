@@ -1,27 +1,24 @@
-FROM alpine:3.19
+FROM alpine:3.21
 
 # Install MariaDB
-RUN apk update && apk add --no-cache \
-    mariadb \
-    mariadb-client
+RUN apk update && apk upgrade && \
+    apk add --no-cache mariadb mariadb-client && \
+    rm -rf /var/cache/apk/*
 
-# Create necessary directories
-RUN mkdir -p /run/mysqld \
-    && mkdir -p /var/lib/mysql
+# Create directories
+RUN mkdir -p /var/lib/mysql /run/mysqld
+
+# Copy configuration and scripts
+COPY config/my.cnf /etc/my.cnf
+COPY tools/entrypoint.sh /entrypoint.sh
 
 # Set permissions
-RUN chown -R mysql:mysql /run/mysqld \
-    && chown -R mysql:mysql /var/lib/mysql
+RUN chmod +x /entrypoint.sh && \
+    chown -R mysql:mysql /var/lib/mysql /run/mysqld
 
-# Copy initialization script from computer to container
-COPY tools/setup_mariadb.sh /setup_mariadb.sh
-COPY config/mariadb.cnf /etc/my.cnf.d/mariadb.cnf
-
-# Make script executable
-RUN chmod +x /setup_mariadb.sh
-
-# Expose MariaDB port
+# Expose port
 EXPOSE 3306
 
-# Run setup script
-CMD ["/setup_mariadb.sh"]
+USER mysql
+
+ENTRYPOINT ["/entrypoint.sh"]
