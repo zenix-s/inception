@@ -20,25 +20,25 @@ build:
 	@echo "$(YELLOW)Building Docker images...$(NC)"
 	@mkdir -p $(DATA_PATH)/wordpress
 	@mkdir -p $(DATA_PATH)/mariadb
-	@docker-compose -f $(COMPOSE_FILE) build
+	@docker compose -f $(COMPOSE_FILE) build
 
 # Start all services
 up:
 	@echo "$(GREEN)Starting services...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) up -d
+	@docker compose -f $(COMPOSE_FILE) up -d
 
 # Stop all services
 down:
 	@echo "$(RED)Stopping services...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) down
+	@docker compose -f $(COMPOSE_FILE) down
 
 # View logs
 logs:
-	@docker-compose -f $(COMPOSE_FILE) logs -f
+	@docker compose -f $(COMPOSE_FILE) logs -f
 
 # Show running containers
 ps:
-	@docker-compose -f $(COMPOSE_FILE) ps
+	@docker compose -f $(COMPOSE_FILE) ps
 
 # Clean containers and networks
 clean: down
@@ -48,7 +48,7 @@ clean: down
 # Full clean including volumes and images
 fclean: down
 	@echo "$(RED)Full cleanup - removing everything...$(NC)"
-	@docker-compose -f $(COMPOSE_FILE) down -v --rmi all
+	@docker compose -f $(COMPOSE_FILE) down -v --rmi all
 	@docker system prune -af
 	@docker volume prune -f
 	@sudo rm -rf $(DATA_PATH)

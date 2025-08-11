@@ -6,20 +6,16 @@ WP_USER_PASSWORD=$WP_USER_PASSWORD
 DB_PASSWORD=$MYSQL_PASSWORD
 
 # Create log directory
-mkdir -p /var/log/php81
+mkdir -p /var/log/php82
 
-# Wait for MariaDB to be ready
-echo "Waiting for MariaDB to be ready..."
-until wp db check --allow-root --path=/var/www/html; do
-    echo "Waiting for database connection..."
-    sleep 3
-done
+# Ensure proper permissions for volume directory
+chown -R nobody:nobody /var/www/html /var/log/php82
 
 # Download WordPress if not already present
 if [ ! -f /var/www/html/wp-config.php ]; then
     echo "Setting up WordPress..."
 
-    # Download WordPress
+    # Download WordPress as root first
     wp core download --allow-root --path=/var/www/html
 
     # Create wp-config.php
@@ -30,6 +26,13 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --dbhost=mariadb:3306 \
         --allow-root \
         --path=/var/www/html
+
+    # Wait for MariaDB to be ready
+    echo "Waiting for MariaDB to be ready..."
+    until wp db check --allow-root --path=/var/www/html; do
+        echo "Waiting for database connection..."
+        sleep 3
+    done
 
     # Install WordPress
     wp core install \
@@ -50,8 +53,13 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --allow-root \
         --path=/var/www/html
 
+    # Fix final permissions
+    chown -R nobody:nobody /var/www/html
+
     echo "WordPress setup completed."
+else
+    echo "WordPress already configured."
 fi
 
 echo "Starting PHP-FPM..."
-exec php-fpm81 -F
+exec php-fpm82 -F

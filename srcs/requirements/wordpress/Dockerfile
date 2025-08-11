@@ -3,40 +3,41 @@ FROM alpine:3.21
 # Install PHP-FPM and required extensions
 RUN apk update && apk upgrade && \
     apk add --no-cache \
-    php81 \
-    php81-fpm \
-    php81-mysqli \
-    php81-json \
-    php81-curl \
-    php81-dom \
-    php81-exif \
-    php81-fileinfo \
-    php81-mbstring \
-    php81-openssl \
-    php81-xml \
-    php81-zip \
-    php81-phar \
-    php81-tokenizer \
-    php81-session \
-    php81-ctype \
-    php81-iconv \
-    php81-simplexml \
-    php81-xmlwriter \
+    php82 \
+    php82-fpm \
+    php82-mysqli \
+    php82-curl \
+    php82-dom \
+    php82-exif \
+    php82-fileinfo \
+    php82-mbstring \
+    php82-openssl \
+    php82-xml \
+    php82-zip \
+    php82-phar \
+    php82-tokenizer \
+    php82-session \
+    php82-ctype \
+    php82-iconv \
+    php82-simplexml \
+    php82-xmlwriter \
     curl \
-    wget && \
+    wget \
+    su-exec && \
     rm -rf /var/cache/apk/*
 
-# Create directories
-RUN mkdir -p /var/www/html /run/php
+# Create directories and PHP symlink
+RUN mkdir -p /var/www/html /run/php && \
+    ln -sf /usr/bin/php82 /usr/bin/php
 
 # Download and install WP-CLI
-RUN curl -O https://raw.githubusercontent.com/wp-cli/wp-cli/v2.8.1/bin/wp-cli.phar && \
+RUN curl -L -o wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.8.1/wp-cli-2.8.1.phar && \
     chmod +x wp-cli.phar && \
     mv wp-cli.phar /usr/local/bin/wp
 
 # Copy configuration files
-COPY config/www.conf /etc/php81/php-fpm.d/www.conf
-COPY config/php.ini /etc/php81/php.ini
+COPY config/www.conf /etc/php82/php-fpm.d/www.conf
+COPY config/php.ini /etc/php82/php.ini
 COPY tools/entrypoint.sh /entrypoint.sh
 
 # Set permissions
@@ -45,7 +46,5 @@ RUN chmod +x /entrypoint.sh && \
 
 # Expose port
 EXPOSE 9000
-
-USER nobody
 
 ENTRYPOINT ["/entrypoint.sh"]

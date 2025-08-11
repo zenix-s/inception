@@ -49,8 +49,8 @@ print_status "Current user: $CURRENT_USER"
 
 # Update .env file with current user
 if [ -f "srcs/.env" ]; then
-    # Replace login with current username in .env file
-    sed -i "s/login\.42\.fr/$CURRENT_USER.42.fr/g" srcs/.env
+    # Replace serferna with current username in .env file
+    sed -i "s/serferna\.42\.fr/$CURRENT_USER.42.fr/g" srcs/.env
     print_success "Updated domain name to $CURRENT_USER.42.fr"
 else
     print_error ".env file not found in srcs/ directory"
@@ -128,3 +128,4 @@ echo -e "1. Run ${YELLOW}'make'${NC} to build and start all services"
 echo -e "2. Run ${YELLOW}'make logs'${NC} to view service logs"
 echo -e "3. Run ${YELLOW}'make help'${NC} to see all available commands"
 echo -e "\n${GREEN}Note:${NC} This is the mandatory part only. No bonus services included."
+echo -e "\n${BLUE}Access your site at:${NC} ${YELLOW}https://$CURRENT_USER.42.fr${NC}"

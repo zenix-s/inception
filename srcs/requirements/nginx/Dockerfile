@@ -12,7 +12,7 @@ RUN mkdir -p /var/www/html /etc/nginx/ssl /run/nginx
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout /etc/nginx/ssl/nginx-selfsigned.key \
     -out /etc/nginx/ssl/nginx-selfsigned.crt \
-    -subj "/C=ES/ST=Extremadura/L=Plasencia/O=42School/CN=login.42.fr"
+    -subj "/C=ES/ST=Extremadura/L=Plasencia/O=42School/CN=serferna.42.fr"
 
 # Copy configuration files
 COPY conf/nginx.conf /etc/nginx/nginx.conf

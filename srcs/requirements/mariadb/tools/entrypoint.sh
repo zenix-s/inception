@@ -8,9 +8,11 @@ DB_PASSWORD=$MYSQL_PASSWORD
 if [ ! -d "/var/lib/mysql/mysql" ]; then
     echo "Initializing MariaDB database..."
 
-    # Create log directory
+    # Create log directory and files
     mkdir -p /var/log/mysql
-    chown mysql:mysql /var/log/mysql
+    touch /var/log/mysql/error.log
+    touch /var/log/mysql/slow.log
+    chown -R mysql:mysql /var/log/mysql
 
     # Initialize the database
     mysql_install_db --user=mysql --datadir=/var/lib/mysql
@@ -54,6 +56,12 @@ EOF
     mysqladmin -S /run/mysqld/mysqld.sock shutdown
 
     echo "MariaDB initialization completed."
+else
+    # Ensure log directory exists even if DB is already initialized
+    mkdir -p /var/log/mysql
+    touch /var/log/mysql/error.log
+    touch /var/log/mysql/slow.log
+    chown -R mysql:mysql /var/log/mysql
 fi
 
 echo "Starting MariaDB..."
