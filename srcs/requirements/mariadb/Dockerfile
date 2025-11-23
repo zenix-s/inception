@@ -1,24 +1,14 @@
-FROM alpine:3.21
+FROM debian:bullseye
 
-# Install MariaDB
-RUN apk update && apk upgrade && \
-    apk add --no-cache mariadb mariadb-client && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get install -y \
+    mariadb-server \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create directories
-RUN mkdir -p /var/lib/mysql /run/mysqld
+COPY conf/my.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
+COPY tools/setup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/setup.sh
 
-# Copy configuration and scripts
-COPY config/my.cnf /etc/my.cnf
-COPY tools/entrypoint.sh /entrypoint.sh
-
-# Set permissions
-RUN chmod +x /entrypoint.sh && \
-    chown -R mysql:mysql /var/lib/mysql /run/mysqld
-
-# Expose port
 EXPOSE 3306
 
-USER mysql
-
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["setup.sh"]

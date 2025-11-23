@@ -1,27 +1,15 @@
-FROM alpine:3.21
+FROM debian:bullseye
 
-# Install nginx and openssl
-RUN apk update && apk upgrade && \
-    apk add --no-cache nginx openssl && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get install -y \
+    nginx \
+    openssl \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create directories
-RUN mkdir -p /var/www/html /etc/nginx/ssl /run/nginx
-
-# Generate self-signed SSL certificate
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/nginx/ssl/nginx-selfsigned.key \
-    -out /etc/nginx/ssl/nginx-selfsigned.crt \
-    -subj "/C=ES/ST=Extremadura/L=Plasencia/O=42School/CN=serferna.42.fr"
-
-# Copy configuration files
 COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY tools/entrypoint.sh /entrypoint.sh
+COPY tools/setup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/setup.sh
 
-# Set permissions
-RUN chmod +x /entrypoint.sh
-
-# Expose port
 EXPOSE 443
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["setup.sh"]

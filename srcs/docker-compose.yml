@@ -1,57 +1,82 @@
+version: "3.8"
+
 services:
-    nginx:
-        build: ./requirements/nginx
-        container_name: nginx
-        ports:
-            - "443:443"
+    mariadb:
+        container_name: mariadb
+        build:
+            context: ./requirements/mariadb
+            dockerfile: Dockerfile
+        image: mariadb
         volumes:
-            - wp-data:/var/www/html
+            - mariadb_data:/var/lib/mysql
         networks:
-            - inception-network
-        depends_on:
-            - wordpress
-        restart: unless-stopped
+            - inception
         env_file:
             - .env
+        secrets:
+            - db_root_password
+            - db_password
+        restart: always
 
     wordpress:
-        build: ./requirements/wordpress
         container_name: wordpress
+        build:
+            context: ./requirements/wordpress
+            dockerfile: Dockerfile
+        image: wordpress
         volumes:
-            - wp-data:/var/www/html
+            - wordpress_data:/var/www/html
         networks:
-            - inception-network
+            - inception
+        env_file:
+            - .env
+        secrets:
+            - db_password
+            - credentials
         depends_on:
             - mariadb
-        restart: unless-stopped
-        env_file:
-            - .env
+        restart: always
 
-    mariadb:
-        build: ./requirements/mariadb
-        container_name: mariadb
+    nginx:
+        container_name: nginx
+        build:
+            context: ./requirements/nginx
+            dockerfile: Dockerfile
+        image: nginx
         volumes:
-            - db-data:/var/lib/mysql
+            - wordpress_data:/var/www/html
         networks:
-            - inception-network
-        restart: unless-stopped
+            - inception
         env_file:
             - .env
+        ports:
+            - "443:443"
+        depends_on:
+            - wordpress
+        restart: always
 
 volumes:
-    wp-data:
+    mariadb_data:
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: /home/${USER}/data/mysql
+    wordpress_data:
         driver: local
         driver_opts:
             type: none
             o: bind
             device: /home/${USER}/data/wordpress
-    db-data:
-        driver: local
-        driver_opts:
-            type: none
-            o: bind
-            device: /home/${USER}/data/mariadb
 
 networks:
-    inception-network:
+    inception:
         driver: bridge
+
+secrets:
+    db_root_password:
+        file: ../secrets/db_root_password.txt
+    db_password:
+        file: ../secrets/db_password.txt
+    credentials:
+        file: ../secrets/credentials.txt

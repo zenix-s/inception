@@ -1,50 +1,31 @@
-FROM alpine:3.21
+FROM debian:bullseye
 
-# Install PHP-FPM and required extensions
-RUN apk update && apk upgrade && \
-    apk add --no-cache \
-    php82 \
-    php82-fpm \
-    php82-mysqli \
-    php82-curl \
-    php82-dom \
-    php82-exif \
-    php82-fileinfo \
-    php82-mbstring \
-    php82-openssl \
-    php82-xml \
-    php82-zip \
-    php82-phar \
-    php82-tokenizer \
-    php82-session \
-    php82-ctype \
-    php82-iconv \
-    php82-simplexml \
-    php82-xmlwriter \
+RUN apt-get update && apt-get install -y \
+    php7.4-fpm \
+    php7.4-mysql \
+    php7.4-curl \
+    php7.4-gd \
+    php7.4-mbstring \
+    php7.4-xml \
+    php7.4-zip \
     curl \
-    wget \
-    su-exec && \
-    rm -rf /var/cache/apk/*
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create directories and PHP symlink
-RUN mkdir -p /var/www/html /run/php && \
-    ln -sf /usr/bin/php82 /usr/bin/php
+# Descargar WP-CLI
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+    && chmod +x wp-cli.phar \
+    && mv wp-cli.phar /usr/local/bin/wp
 
-# Download and install WP-CLI
-RUN curl -L -o wp-cli.phar https://github.com/wp-cli/wp-cli/releases/download/v2.8.1/wp-cli-2.8.1.phar && \
-    chmod +x wp-cli.phar && \
-    mv wp-cli.phar /usr/local/bin/wp
+COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+COPY tools/setup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/setup.sh
 
-# Copy configuration files
-COPY config/www.conf /etc/php82/php-fpm.d/www.conf
-COPY config/php.ini /etc/php82/php.ini
-COPY tools/entrypoint.sh /entrypoint.sh
+# Crear directorio para PHP-FPM
+RUN mkdir -p /run/php && chown -R www-data:www-data /run/php
 
-# Set permissions
-RUN chmod +x /entrypoint.sh && \
-    chown -R nobody:nobody /var/www/html /run/php
+WORKDIR /var/www/html
 
-# Expose port
 EXPOSE 9000
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["setup.sh"]
