@@ -59,7 +59,46 @@ EOF
     wait "$pid"
     echo "MariaDB detenida. Iniciando en modo normal..."
 else
-    echo "Base de datos ya inicializada. Saltando configuración..."
+    echo "Base de datos ya inicializada. Asegurando usuario y permisos..."
+
+    # Iniciar MariaDB temporalmente para aplicar o verificar grants si ya existe la DB
+    mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
+    pid="$!"
+
+    # Esperar a que MariaDB esté lista (usando credenciales root ya configuradas)
+    echo "Esperando a que MariaDB esté lista (modo comprobación)..."
+    for i in {30..0}; do
+        if mysqladmin ping -u root -p"${DB_ROOT_PASSWORD}" --silent 2>/dev/null; then
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "$i" = 0 ]; then
+        echo "Error: MariaDB no se inició correctamente en modo comprobación"
+        exit 1
+    fi
+
+    echo "MariaDB lista. Verificando/creando base de datos y usuario para WordPress..."
+
+    # Asegurar que la base de datos y el usuario con permisos adecuados existan
+    mysql -u root -p"${DB_ROOT_PASSWORD}" << EOF
+CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
+FLUSH PRIVILEGES;
+EOF
+
+    echo "Verificando usuarios y grants (para depuración)..."
+    mysql -u root -p"${DB_ROOT_PASSWORD}" -e "SELECT User,Host FROM mysql.user;" || true
+    mysql -u root -p"${DB_ROOT_PASSWORD}" -e "SHOW GRANTS FOR '${MYSQL_USER}'@'%';" || true
+
+    # Detener MariaDB temporal
+    mysqladmin -u root -p"${DB_ROOT_PASSWORD}" shutdown
+
+    echo "Esperando a que MariaDB se detenga..."
+    wait "$pid"
+    echo "MariaDB detenida. Iniciando en modo normal..."
 fi
 
 # Iniciar MariaDB en primer plano (modo normal)
