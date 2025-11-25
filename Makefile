@@ -80,6 +80,9 @@ secrets-clean:
 	@rm -f secrets/wp_admin_password.txt secrets/wp_second_password.txt
 	@echo "✅ Secrets removed"
 
+# see-db:
+# 	@docker exec -it srcs_mariadb mysql -u root -p$$(cat secrets/db_root_password.txt)
+
 help:
 	@echo "🚀 Inception Makefile Commands:"
 	@echo "  make up         - Start all containers"
@@ -93,3 +96,9 @@ help:
 	@echo "  make secrets    - Generate Docker secrets"
 	@echo "  make secrets-status - Check secrets status"
 	@echo "  make secrets-clean  - Remove generated secrets"
+	@echo "Docker commands:"
+	@echo "  docker ps       - List running containers"
+	@echo "  docker images   - List Docker images"
+	@echo "  docker volume ls - List Docker volumes"
+	@echo "  docker network ls - List Docker networks"
+	@echo "  docker exec -it <container> bash - Access container shell"
