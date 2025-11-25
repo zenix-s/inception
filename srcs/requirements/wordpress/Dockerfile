@@ -1,31 +1,30 @@
+# Imagen base mínima
 FROM debian:bullseye
 
-RUN apt-get update && apt-get install -y \
-    php7.4-fpm \
-    php7.4-mysql \
-    php7.4-curl \
-    php7.4-gd \
-    php7.4-mbstring \
-    php7.4-xml \
-    php7.4-zip \
-    curl \
-    mariadb-client \
-    && rm -rf /var/lib/apt/lists/*
+RUN	apt-get update -y && \
+	apt-get upgrade -y && \
+	apt-get install -y \
+		php7.4-fpm \
+		php7.4-mysqli \
+		curl \
+		mariadb-client \
+		wget \
+		unzip && \
+	apt-get clean
 
-# Descargar WP-CLI
-RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-    && chmod +x wp-cli.phar \
-    && mv wp-cli.phar /usr/local/bin/wp
+# Crear directorios necesarios
+RUN mkdir -p /var/www/html /run/php
 
-COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
-COPY tools/setup.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/setup.sh
+# Copia opcional de archivos de configuración personalizados
+COPY ./conf/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY ./conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+COPY ./conf/www.conf /usr/local/etc/php-fpm-www.conf
 
-# Crear directorio para PHP-FPM
-RUN mkdir -p /run/php && chown -R www-data:www-data /run/php
+COPY ./tools/wp_setup.sh /usr/local/bin/wp_setup.sh
+RUN chmod +x /usr/local/bin/wp_setup.sh
 
-WORKDIR /var/www/html
-
+# Declarar el puerto (informativo)
 EXPOSE 9000
 
-ENTRYPOINT ["setup.sh"]
+# Comando por defecto al arrancar el contenedor
+CMD ["bash", "/usr/local/bin/wp_setup.sh"]
