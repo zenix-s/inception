@@ -1,70 +1,60 @@
 services:
-  nginx:
-    container_name:
-      nginx
-    build:
-      context: ./requirements/nginx
-    volumes:
-      - wordpress_data:/var/www/html # Comentado, puedes activar si usas volumen nombrado
-    #  - /home/serferna/data/wordpress:/var/www/html
-    ports:
-      - "${NGINX_PORT}:443"
-    networks:
-      - inception
-    depends_on:
-      - wordpress
-    restart: always
+    nginx:
+        container_name: nginx
+        build:
+            context: ./requirements/nginx
+        volumes:
+            - wordpress_data:/var/www/html
+        ports:
+            - "${NGINX_PORT}:443"
+        networks:
+            - inception
+        depends_on:
+            - wordpress
+        restart: always
 
-  mariadb:
-    container_name:
-      mariadb
-    build:
-      context: .
-      dockerfile: requirements/mariadb/Dockerfile
-    volumes:
-      - mariadb_data:/var/lib/mysql
-    #  - /home/serferna/data/mariadb:/var/lib/mysql
-    networks:
-      - inception
-    env_file:
-      - .env
-    restart: always
+    mariadb:
+        container_name: mariadb
+        build:
+            context: .
+            dockerfile: requirements/mariadb/Dockerfile
+        volumes:
+            - mariadb_data:/var/lib/mysql
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
 
-  wordpress:
-    container_name:
-      wordpress
-    build:
-      context: ./requirements/wordpress
-    volumes:
-      - wordpress_data:/var/www/html
-    #  - /home/serferna/data/wordpress:/var/www/html
-    networks:
-      - inception
-    env_file:
-      - .env
-    depends_on:
-      - mariadb
-    restart: always
+    wordpress:
+        container_name: wordpress
+        build:
+            context: ./requirements/wordpress
+        volumes:
+            - wordpress_data:/var/www/html
+        networks:
+            - inception
+        env_file:
+            - .env
+        depends_on:
+            - mariadb
+        restart: always
 
 networks:
-  inception:
-    driver: bridge
-
-#volumes:
-  #wordpress_data:
-  #mariadb_data:
+    inception:
+        driver: bridge
 
 volumes:
-  wordpress_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /home/serferna/data/wordpress
-      o: bind
+    wordpress_data:
+        driver: local
+        driver_opts:
+            type: none
+            device: /home/serferna/data/wordpress
+            o: bind
 
-  mariadb_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /home/serferna/data/mariadb
-      o: bind
+    mariadb_data:
+        driver: local
+        driver_opts:
+            type: none
+            device: /home/serferna/data/mariadb
+            o: bind

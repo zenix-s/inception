@@ -3,9 +3,9 @@ FROM debian:bullseye
 
 # Instalamos nginx y limpiamos cache
 RUN	apt-get update -y && \
-	apt-get upgrade -y && \
-	apt-get install -y nginx openssl && \
-	apt-get clean
+    apt-get upgrade -y && \
+    apt-get install -y nginx openssl && \
+    apt-get clean
 
 # Copiar el script y el archivo de configuración
 COPY tools/generate_certs.sh /tmp/generate_certs.sh
@@ -14,7 +14,7 @@ COPY conf/default.conf /etc/nginx/sites-available/default
 
 # Dar permisos de ejecución al script y ejecutarlo
 RUN chmod +x /tmp/generate_certs.sh && \
-	/tmp/generate_certs.sh
+    /tmp/generate_certs.sh
 
 RUN chmod -R 755 /var/www/html
 RUN chown -R www-data:www-data /var/www/html

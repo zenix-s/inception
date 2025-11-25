@@ -2,15 +2,15 @@
 FROM debian:bullseye
 
 RUN	apt-get update -y && \
-	apt-get upgrade -y && \
-	apt-get install -y \
-		php7.4-fpm \
-		php7.4-mysqli \
-		curl \
-		mariadb-client \
-		wget \
-		unzip && \
-	apt-get clean
+    apt-get upgrade -y && \
+    apt-get install -y \
+    php7.4-fpm \
+    php7.4-mysqli \
+    curl \
+    mariadb-client \
+    wget \
+    unzip && \
+    apt-get clean
 
 # Crear directorios necesarios
 RUN mkdir -p /var/www/html /run/php

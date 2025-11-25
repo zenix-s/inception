@@ -3,9 +3,9 @@ FROM debian:bullseye
 
 # Instalamos MariaDB y limpiamos cache
 RUN apt-get update -y && \
-	apt-get upgrade -y && \
-	apt install mariadb-server gettext -y && \
-	apt-get clean
+    apt-get upgrade -y && \
+    apt install mariadb-server gettext -y && \
+    apt-get clean
 
 COPY requirements/mariadb/conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 COPY .env /etc/mysql/.env
