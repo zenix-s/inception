@@ -27,7 +27,37 @@ clean:
 	docker compose -f srcs/docker-compose.yml down --remove-orphans
 	docker image prune -f
 
-fclean:
+secrets:
+	@echo "Generando secretos de Docker..."
+	@mkdir -p secrets
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/db_root_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/db_user_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/wp_admin_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/wp_second_password.txt
+	@echo "Secretos generados y guardados en el directorio 'secrets'"
+
+secrets-status:
+	@echo "Estado de los secretos de Docker:"
+	@if [ -d "secrets" ]; then \
+		echo "El directorio de secretos existe"; \
+		for file in db_root_password.txt db_user_password.txt wp_admin_password.txt wp_second_password.txt; do \
+			if [ -f "secrets/$$file" ]; then \
+				echo "$$file existe"; \
+			else \
+				echo "$$file falta"; \
+			fi; \
+		done; \
+	else \
+		echo "Falta el directorio de secretos"; \
+	fi
+
+secrets-clean:
+	@echo "Eliminando los secretos generados..."
+	@rm -f secrets/db_root_password.txt secrets/db_user_password.txt
+	@rm -f secrets/wp_admin_password.txt secrets/wp_second_password.txt
+	@echo "Secretos eliminados"
+
+fclean: secrets-clean
 	docker compose -f srcs/docker-compose.yml down --volumes --remove-orphans
 	docker container prune -f
 	docker image prune -af
@@ -41,64 +71,38 @@ volumes:
 	docker volume inspect srcs_wordpress_data
 
 status:
-	@echo "🟦 Docker containers:"
+	@echo "Contenedores Docker:"
 	@docker ps -a --filter name=nginx --filter name=wordpress --filter name=mariadb
 
-	@echo "\n🟩 Docker volumes:"
-	@docker volume ls | grep -E 'mariadb_data|wordpress_data' || echo "No volumes found"
+	@echo "\nVolúmenes Docker:"
+	@docker volume ls | grep -E 'mariadb_data|wordpress_data' || echo "No se encontraron volúmenes"
 
-	@echo "\n🟨 Docker volume paths:"
+	@echo "\nRutas de los volúmenes Docker:"
 	@echo "MariaDB:    /home/serferna/data/mariadb"
 	@echo "WordPress:  /home/serferna/data/wordpress"
 	@sudo ls -l /home/serferna/data/
 
-	@echo "\n🟪 Docker network:"
-	@docker network ls | grep inception || echo "No network found"
+	@echo "\nRed Docker:"
+	@docker network ls | grep inception || echo "No se encontró la red"
 
-secrets:
-	@echo "🔐 Generating Docker secrets..."
-	@cd secrets && ./generate_secrets.sh
-
-secrets-status:
-	@echo "🔐 Docker secrets status:"
-	@if [ -d "secrets" ]; then \
-		echo "✅ Secrets directory exists"; \
-		for file in db_root_password.txt db_user_password.txt wp_admin_password.txt wp_second_password.txt; do \
-			if [ -f "secrets/$$file" ]; then \
-				echo "✅ $$file exists"; \
-			else \
-				echo "❌ $$file missing"; \
-			fi; \
-		done; \
-	else \
-		echo "❌ Secrets directory missing"; \
-	fi
-
-secrets-clean:
-	@echo "🧹 Removing generated secrets..."
-	@rm -f secrets/db_root_password.txt secrets/db_user_password.txt
-	@rm -f secrets/wp_admin_password.txt secrets/wp_second_password.txt
-	@echo "✅ Secrets removed"
-
-# see-db:
-# 	@docker exec -it srcs_mariadb mysql -u root -p$$(cat secrets/db_root_password.txt)
+	@make secrets-status
 
 help:
-	@echo "🚀 Inception Makefile Commands:"
-	@echo "  make up         - Start all containers"
-	@echo "  make down       - Stop all containers"
-	@echo "  make re         - Restart all containers"
-	@echo "  make logs       - Show container logs"
-	@echo "  make clean      - Remove containers and images"
-	@echo "  make fclean     - Full cleanup (containers, volumes, data)"
-	@echo "  make status     - Show project status"
-	@echo "  make volumes    - Show volume information"
-	@echo "  make secrets    - Generate Docker secrets"
-	@echo "  make secrets-status - Check secrets status"
-	@echo "  make secrets-clean  - Remove generated secrets"
-	@echo "Docker commands:"
-	@echo "  docker ps       - List running containers"
-	@echo "  docker images   - List Docker images"
-	@echo "  docker volume ls - List Docker volumes"
-	@echo "  docker network ls - List Docker networks"
-	@echo "  docker exec -it <container> bash - Access container shell"
+	@echo "Comandos del Makefile de Inception:"
+	@echo "  make up         - Iniciar todos los contenedores"
+	@echo "  make down       - Detener todos los contenedores"
+	@echo "  make re         - Reiniciar todos los contenedores"
+	@echo "  make logs       - Mostrar los logs de los contenedores"
+	@echo "  make clean      - Eliminar contenedores e imágenes"
+	@echo "  make fclean     - Limpieza total (contenedores, volúmenes, datos)"
+	@echo "  make status     - Mostrar el estado del proyecto"
+	@echo "  make volumes    - Mostrar información de los volúmenes"
+	@echo "  make secrets    - Generar secretos de Docker"
+	@echo "  make secrets-status - Comprobar el estado de los secretos"
+	@echo "  make secrets-clean  - Eliminar los secretos generados"
+	@echo "Comandos de Docker:"
+	@echo "  docker ps       - Listar contenedores en ejecución"
+	@echo "  docker images   - Listar imágenes de Docker"
+	@echo "  docker volume ls - Listar volúmenes de Docker"
+	@echo "  docker network ls - Listar redes de Docker"
+	@echo "  docker exec -it <container> bash - Acceder a la terminal del contenedor"
