@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Load secrets from Docker secrets files
+if [ -f /run/secrets/db_user_password ]; then
+    export DB_USER_PASSWORD=$(cat /run/secrets/db_user_password)
+fi
+if [ -f /run/secrets/wp_admin_password ]; then
+    export WP_PASSWORD=$(cat /run/secrets/wp_admin_password)
+fi
+if [ -f /run/secrets/wp_second_password ]; then
+    export WP_SECOND_PASSWORD=$(cat /run/secrets/wp_second_password)
+fi
+
 # Instalar wordpress sino no existe ya. Aseguramos la persistencia al bajar y levantar contenedores.
 # Siempre que no eliminemos los volumenes.
 if [ -f /var/www/html/wp-config.php ]; then

@@ -54,3 +54,42 @@ status:
 
 	@echo "\n🟪 Docker network:"
 	@docker network ls | grep inception || echo "No network found"
+
+secrets:
+	@echo "🔐 Generating Docker secrets..."
+	@cd secrets && ./generate_secrets.sh
+
+secrets-status:
+	@echo "🔐 Docker secrets status:"
+	@if [ -d "secrets" ]; then \
+		echo "✅ Secrets directory exists"; \
+		for file in db_root_password.txt db_user_password.txt wp_admin_password.txt wp_second_password.txt; do \
+			if [ -f "secrets/$$file" ]; then \
+				echo "✅ $$file exists"; \
+			else \
+				echo "❌ $$file missing"; \
+			fi; \
+		done; \
+	else \
+		echo "❌ Secrets directory missing"; \
+	fi
+
+secrets-clean:
+	@echo "🧹 Removing generated secrets..."
+	@rm -f secrets/db_root_password.txt secrets/db_user_password.txt
+	@rm -f secrets/wp_admin_password.txt secrets/wp_second_password.txt
+	@echo "✅ Secrets removed"
+
+help:
+	@echo "🚀 Inception Makefile Commands:"
+	@echo "  make up         - Start all containers"
+	@echo "  make down       - Stop all containers"
+	@echo "  make re         - Restart all containers"
+	@echo "  make logs       - Show container logs"
+	@echo "  make clean      - Remove containers and images"
+	@echo "  make fclean     - Full cleanup (containers, volumes, data)"
+	@echo "  make status     - Show project status"
+	@echo "  make volumes    - Show volume information"
+	@echo "  make secrets    - Generate Docker secrets"
+	@echo "  make secrets-status - Check secrets status"
+	@echo "  make secrets-clean  - Remove generated secrets"

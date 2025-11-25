@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Load secrets from Docker secrets files
+if [ -f /run/secrets/db_root_password ]; then
+    export DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
+fi
+if [ -f /run/secrets/db_user_password ]; then
+    export DB_USER_PASSWORD=$(cat /run/secrets/db_user_password)
+fi
+
 # Sustituye variables en init.sql
 bash /usr/local/bin/substitute_env_vars.sh
 

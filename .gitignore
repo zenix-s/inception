@@ -2,6 +2,9 @@
 /home/*/data/
 data/
 
+# Secrets directory
+secrets/
+
 # Docker volumes and runtime files
 *.log
 logs/
