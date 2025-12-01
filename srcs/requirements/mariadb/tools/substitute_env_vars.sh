@@ -13,6 +13,11 @@ if [ -f /run/secrets/db_user_password ]; then
     export DB_USER_PASSWORD="$(cat /run/secrets/db_user_password)"
 fi
 
+# Load optional second DB user password from secrets
+if [ -f /run/secrets/db_second_password ]; then
+    export DB_SECOND_PASSWORD="$(cat /run/secrets/db_second_password)"
+fi
+
 # Ensure template exists
 if [ ! -f "$TEMPLATE" ]; then
     echo "[!] Missing template: $TEMPLATE" >&2
@@ -20,7 +25,7 @@ if [ ! -f "$TEMPLATE" ]; then
 fi
 
 # Replace only the variables used by init.sql
-# (DB_DATABASE and DB_USER_NAME are expected to come from the environment / docker env_file)
-envsubst '$DB_DATABASE $DB_ROOT_PASSWORD $DB_USER_NAME $DB_USER_PASSWORD' < "$TEMPLATE" > "$OUTPUT"
+# (DB_DATABASE, DB_USER_NAME and DB_SECOND_NAME are expected to come from the environment / docker env_file)
+envsubst '$DB_DATABASE $DB_ROOT_PASSWORD $DB_USER_NAME $DB_USER_PASSWORD $DB_SECOND_NAME $DB_SECOND_PASSWORD' < "$TEMPLATE" > "$OUTPUT"
 
 echo "[+] Generated $OUTPUT"

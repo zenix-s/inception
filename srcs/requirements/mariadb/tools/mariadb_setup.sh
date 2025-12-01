@@ -7,6 +7,37 @@ fi
 if [ -f /run/secrets/db_user_password ]; then
     export DB_USER_PASSWORD=$(cat /run/secrets/db_user_password)
 fi
+# Cargar secreto para el segundo usuario de la BBDD (opcional pero recomendado)
+if [ -f /run/secrets/db_second_password ]; then
+    export DB_SECOND_PASSWORD=$(cat /run/secrets/db_second_password)
+fi
+
+# Verificar que las variables críticas están presentes (evitar ejecutar init con valores vacíos)
+MISSING=0
+if [ -z "${DB_DATABASE:-}" ]; then
+    echo "[!] Missing required env: DB_DATABASE" >&2
+    MISSING=1
+fi
+if [ -z "${DB_USER_NAME:-}" ]; then
+    echo "[!] Missing required env: DB_USER_NAME" >&2
+    MISSING=1
+fi
+if [ -z "${DB_USER_PASSWORD:-}" ]; then
+    echo "[!] Missing required secret: DB_USER_PASSWORD" >&2
+    MISSING=1
+fi
+if [ -z "${DB_SECOND_NAME:-}" ]; then
+    echo "[!] Missing required env: DB_SECOND_NAME" >&2
+    MISSING=1
+fi
+if [ -z "${DB_SECOND_PASSWORD:-}" ]; then
+    echo "[!] Missing required secret: DB_SECOND_PASSWORD" >&2
+    MISSING=1
+fi
+if [ $MISSING -eq 1 ]; then
+    echo "[!] One or more required environment variables/secrets are missing. Aborting init." >&2
+    exit 1
+fi
 
 # Paso 2 - Sustituir variables en el archivo de inicialización SQL
 # Se delega a la utilidad que reemplaza variables de entorno en /etc/mysql/init.sql

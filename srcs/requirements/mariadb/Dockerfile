@@ -9,7 +9,8 @@ RUN apt-get update -y && \
 
 # Paso 3 - Copiar configuración y scripts al contenedor
 COPY requirements/mariadb/conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
-COPY .env /etc/mysql/.env
+# No copiar .env a la imagen: las credenciales deben proporcionarse en tiempo de ejecución mediante Docker secrets.
+# El script de inicialización leerá /run/secrets/db_root_password, /run/secrets/db_user_password y /run/secrets/db_second_password
 COPY requirements/mariadb/tools/init.sql /etc/mysql/init.temp.sql
 COPY requirements/mariadb/tools/substitute_env_vars.sh /usr/local/bin/substitute_env_vars.sh
 COPY requirements/mariadb/tools/mariadb_setup.sh /usr/local/bin/mariadb_setup.sh

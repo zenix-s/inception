@@ -1,16 +1,18 @@
 #Makefile
 
 NAME	=	inception
+DATA_DIR ?= /home/serferna/data
+SECRETS_DIR ?= secrets
 
 all: up
 
 setup_dirs:
-	sudo mkdir -p /home/serferna/data/wordpress
-	sudo chown -R 101:101 /home/serferna/data/wordpress
-	sudo chmod 755 /home/serferna/data/wordpress
-	sudo mkdir -p /home/serferna/data/mariadb
-	sudo chown -R 101:101 /home/serferna/data/mariadb
-	sudo chmod 750 /home/serferna/data/mariadb
+	sudo mkdir -p $(DATA_DIR)/wordpress
+	sudo chown -R 101:101 $(DATA_DIR)/wordpress
+	sudo chmod 755 $(DATA_DIR)/wordpress
+	sudo mkdir -p $(DATA_DIR)/mariadb
+	sudo chown -R 101:101 $(DATA_DIR)/mariadb
+	sudo chmod 750 $(DATA_DIR)/mariadb
 
 up:	setup_dirs
 	docker compose -f srcs/docker-compose.yml up -d --build
@@ -29,19 +31,20 @@ clean:
 
 secrets:
 	@echo "Generando secretos de Docker..."
-	@mkdir -p secrets
-	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/db_root_password.txt
-	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/db_user_password.txt
-	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/wp_admin_password.txt
-	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > secrets/wp_second_password.txt
-	@echo "Secretos generados y guardados en el directorio 'secrets'"
+	@mkdir -p $(SECRETS_DIR)
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > $(SECRETS_DIR)/db_root_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > $(SECRETS_DIR)/db_user_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > $(SECRETS_DIR)/db_second_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > $(SECRETS_DIR)/wp_admin_password.txt
+	@openssl rand -base64 12 | tr -d /=+ | cut -c -12 > $(SECRETS_DIR)/wp_second_password.txt
+	@echo "Secretos generados y guardados en el directorio '$(SECRETS_DIR)'"
 
 secrets-status:
 	@echo "Estado de los secretos de Docker:"
-	@if [ -d "secrets" ]; then \
+	@if [ -d "$(SECRETS_DIR)" ]; then \
 		echo "El directorio de secretos existe"; \
-		for file in db_root_password.txt db_user_password.txt wp_admin_password.txt wp_second_password.txt; do \
-			if [ -f "secrets/$$file" ]; then \
+		for file in db_root_password.txt db_user_password.txt db_second_password.txt wp_admin_password.txt wp_second_password.txt; do \
+			if [ -f "$(SECRETS_DIR)/$$file" ]; then \
 				echo "$$file existe"; \
 			else \
 				echo "$$file falta"; \
@@ -53,8 +56,8 @@ secrets-status:
 
 secrets-clean:
 	@echo "Eliminando los secretos generados..."
-	@rm -f secrets/db_root_password.txt secrets/db_user_password.txt
-	@rm -f secrets/wp_admin_password.txt secrets/wp_second_password.txt
+	@rm -f $(SECRETS_DIR)/db_root_password.txt $(SECRETS_DIR)/db_user_password.txt $(SECRETS_DIR)/db_second_password.txt
+	@rm -f $(SECRETS_DIR)/wp_admin_password.txt $(SECRETS_DIR)/wp_second_password.txt
 	@echo "Secretos eliminados"
 
 fclean: secrets-clean
@@ -62,7 +65,7 @@ fclean: secrets-clean
 	docker container prune -f
 	docker image prune -af
 	docker volume prune -f
-	sudo rm -rf /home/serferna/data/
+	sudo rm -rf $(DATA_DIR)/
 	docker volume rm srcs_mariadb_data srcs_wordpress_data || true
 
 volumes:
@@ -78,9 +81,9 @@ status:
 	@docker volume ls | grep -E 'mariadb_data|wordpress_data' || echo "No se encontraron volúmenes"
 
 	@echo "\nRutas de los volúmenes Docker:"
-	@echo "MariaDB:    /home/serferna/data/mariadb"
-	@echo "WordPress:  /home/serferna/data/wordpress"
-	@sudo ls -l /home/serferna/data/
+	@echo "MariaDB:    $(DATA_DIR)/mariadb"
+	@echo "WordPress:  $(DATA_DIR)/wordpress"
+	@sudo ls -l $(DATA_DIR)/
 
 	@echo "\nRed Docker:"
 	@docker network ls | grep inception || echo "No se encontró la red"
