@@ -14,7 +14,7 @@ setup_dirs:
 	sudo chown -R 101:101 $(DATA_DIR)/mariadb
 	sudo chmod 750 $(DATA_DIR)/mariadb
 
-up:	setup_dirs
+up:	setup_dirs secrets
 	docker compose -f srcs/docker-compose.yml up -d --build
 
 down:
