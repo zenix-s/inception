@@ -1,12 +1,26 @@
 #!/bin/bash
+set -e
 
-echo "[+] Sustituyendo variables en init.temp.sql..."
+TEMPLATE="/etc/mysql/init.temp.sql"
+OUTPUT="/etc/mysql/init.sql"
 
-# Cargar variables de entorno
-export $(grep -v '^#' /etc/mysql/.env | xargs)
+# Load Docker secrets for passwords if present
+if [ -f /run/secrets/db_root_password ]; then
+    export DB_ROOT_PASSWORD="$(cat /run/secrets/db_root_password)"
+fi
 
-# Sustituir variables en init.temp.sql
-envsubst < /etc/mysql/init.temp.sql > /etc/mysql/init.sql
+if [ -f /run/secrets/db_user_password ]; then
+    export DB_USER_PASSWORD="$(cat /run/secrets/db_user_password)"
+fi
 
-echo "[+] Archivo /etc/mysql/init.sql generado:"
-cat /etc/mysql/init.sql
+# Ensure template exists
+if [ ! -f "$TEMPLATE" ]; then
+    echo "[!] Missing template: $TEMPLATE" >&2
+    exit 1
+fi
+
+# Replace only the variables used by init.sql
+# (DB_DATABASE and DB_USER_NAME are expected to come from the environment / docker env_file)
+envsubst '$DB_DATABASE $DB_ROOT_PASSWORD $DB_USER_NAME $DB_USER_PASSWORD' < "$TEMPLATE" > "$OUTPUT"
+
+echo "[+] Generated $OUTPUT"

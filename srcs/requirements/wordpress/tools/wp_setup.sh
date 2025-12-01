@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Load secrets from Docker secrets files
+# Paso 1 - Cargar secretos desde Docker secrets (si existen)
 if [ -f /run/secrets/db_user_password ]; then
     export DB_USER_PASSWORD=$(cat /run/secrets/db_user_password)
 fi
@@ -11,18 +11,17 @@ if [ -f /run/secrets/wp_second_password ]; then
     export WP_SECOND_PASSWORD=$(cat /run/secrets/wp_second_password)
 fi
 
-# Instalar wordpress sino no existe ya. Aseguramos la persistencia al bajar y levantar contenedores.
-# Siempre que no eliminemos los volumenes.
+# Paso 2 - Si WordPress ya está instalado, iniciar php-fpm en primer plano y salir
 if [ -f /var/www/html/wp-config.php ]; then
     echo "[+] WordPress ya está instalado. Saltando configuración inicial."
     php-fpm7.4 -F
     exit 0
 fi
 
-# Copiar www.conf
+# Paso 3 - Copiar configuración de pool PHP-FPM
 cp /usr/local/etc/php-fpm-www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
-# Descargar WP-CLI si no existe
+# Paso 4 - Descargar WP-CLI si no existe
 if [ ! -f /usr/local/bin/wp ]; then
   cd /usr/local/bin
   curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
@@ -30,11 +29,11 @@ if [ ! -f /usr/local/bin/wp ]; then
   mv wp-cli.phar wp
 fi
 
-# Preparar el directorio web
+# Paso 5 - Preparar el directorio web
 mkdir -p /var/www/html
 cd /var/www/html
 
-# Descargar e instalar WordPress
+# Paso 6 - Descargar e instalar WordPress
 wp core download --allow-root
 wp config create \
   --dbname="$DB_DATABASE" \
@@ -43,7 +42,7 @@ wp config create \
   --dbhost="$DB_HOSTNAME" \
   --allow-root
 
-# Crear usuario administrador
+# Paso 7 - Crear usuario administrador
 wp core install \
   --url="$DOMAIN_NAME" \
   --title="serferna's Inception" \
@@ -53,11 +52,11 @@ wp core install \
   --skip-email \
   --allow-root
 
-# Crear segundo usuario no administrador
+# Paso 8 - Crear segundo usuario no administrador
 wp user create "$WP_SECOND_USER" "$WP_SECOND_EMAIL" \
   --user_pass="$WP_SECOND_PASSWORD" \
   --role=subscriber \
   --allow-root
 
-# Lanzar php-fpm en primer plano
+# Paso 9 - Lanzar php-fpm en primer plano
 php-fpm7.4 -F

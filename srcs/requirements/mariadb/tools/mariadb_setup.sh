@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Load secrets from Docker secrets files
+# Paso 1 - Cargar secretos desde archivos de Docker secrets
 if [ -f /run/secrets/db_root_password ]; then
     export DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 fi
@@ -8,56 +8,48 @@ if [ -f /run/secrets/db_user_password ]; then
     export DB_USER_PASSWORD=$(cat /run/secrets/db_user_password)
 fi
 
-# Sustituye variables en init.sql
+# Paso 2 - Sustituir variables en el archivo de inicialización SQL
+# Se delega a la utilidad que reemplaza variables de entorno en /etc/mysql/init.sql
 bash /usr/local/bin/substitute_env_vars.sh
 
-# Verifica si el directorio de datos de MariaDB está vacío
-# Esto es crucial para la inicialización
+# Paso 3 - Inicializar el directorio de datos de MariaDB si está vacío
+# Comprobamos la presencia de las tablas del sistema para determinar si hay que inicializar.
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "[+] Directorio de datos de MariaDB vacío. Inicializando base de datos..."
-    # Comando para inicializar MariaDB. Esto crea las tablas del sistema.
+    # Inicializar las tablas del sistema de MariaDB en el datadir especificado.
+    # mysql_install_db --user=mysql --datadir=/var/lib/mysql --auth-root-authentication-method=normal
+    #   -> mysql_install_db es la utilidad para inicializar el directorio de datos.
+    #   -> --user=mysql indica que los archivos serán propiedad del usuario mysql.
+    #   -> --datadir especifica la ubicación del directorio de datos.
+    #   -> --auth-root-authentication-method=normal configura el método de autenticación del root como normal (contraseña).
     mysql_install_db --user=mysql --datadir=/var/lib/mysql --auth-root-authentication-method=normal
-    echo "[+] Base de datos MariaDB inicializada."
 fi
 
-
-# Inicia MariaDB en segundo plano
-echo "[+] Lanzando mysqld..."
+# Paso 4 - Iniciar MariaDB en segundo plano para poder ejecutar tareas de configuración
+# Se lanza el daemon en background para permitir la ejecución de comandos mysql/mysqladmin.
+# mysqld &
+#   -> mysqld es el comando para iniciar el servidor MariaDB.
+#   -> & al final indica que se ejecute en segundo plano.
 mysqld &
 
-# Espera a que el socket esté disponible antes de continuar
-echo "[+] Esperando conexión a MariaDB..."
+# Paso 5 - Esperar hasta que MariaDB acepte conexiones
+# Reintentamos ping hasta que el servidor responda por el socket.
 while ! mysqladmin ping --silent; do
-    echo "[+] Esperando a que MariaDB arranque..."
     sleep 1
 done
 
-# Ejecuta el SQL inicial (solo si no se ha ejecutado ya)
-# Agregamos una bandera o un chequeo para evitar ejecutarlo cada vez
-# Usamos un archivo de bandera para esto
-if [ ! -f /var/lib/mysql/INITIALIZED_FLAG ]; then
-    echo "[+] Ejecutando SQL inicial..."
-    mysql -u root < /etc/mysql/init.sql
-    touch /var/lib/mysql/INITIALIZED_FLAG
-    echo "[+] SQL inicial ejecutado y bandera creada."
-else
-    echo "[+] SQL inicial ya ejecutado previamente. Saltando."
+# Paso 6 - Ejecutar SQL inicial solo si no se ha ejecutado previamente
+# Utilizamos un archivo bandera para evitar volver a aplicar el init SQL en arranques posteriores.
+INITIALIZED_FLAG="/var/lib/mysql/INITIALIZED_FLAG"
+INIT_SQL="/etc/mysql/init.sql"
+if [ ! -f "$INITIALIZED_FLAG" ]; then
+    mysql -u root < "$INIT_SQL"
+    touch "$INITIALIZED_FLAG"
 fi
 
-# Intentar apagar MariaDB con contraseña
-echo "[+] Apagando mysqld..."
+# Paso 7 - Detener el servidor temporalmente para que el contenedor pueda arrancar luego en primer plano
+# Se usa la contraseña root si está disponible; si no, intentamos sin -p.
 mysqladmin -u root -p"$DB_ROOT_PASSWORD" shutdown
 
-# Espera a que el proceso realmente termine antes de seguir
-wait
-
-# # Mata el mysqld temporal (para que luego arranque en primer plano como proceso principal)
-# echo "[+] Deteniendo mysqld temporal..."
-# mysqladmin shutdown
-
-# Ejecutamos mysqld como proceso principal del contenedor
-echo "[+] Lanzando mysqld en primer plano..."
+# Paso 8 - Ejecutar MariaDB en primer plano como proceso principal del contenedor
+# Reemplazamos el shell por el proceso del servidor para que Docker gestione el PID 1.
 exec mysqld
-
-# Mantiene el contenedor vivo
-#tail -f /dev/null

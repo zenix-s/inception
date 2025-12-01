@@ -1,7 +1,7 @@
-# Imagen base mínima
 FROM debian:bullseye
 
-RUN	apt-get update -y && \
+# Paso 1 - Instalar PHP, utilidades y extensiones necesarias
+RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y \
     php7.4-fpm \
@@ -10,12 +10,12 @@ RUN	apt-get update -y && \
     mariadb-client \
     wget \
     unzip && \
-    apt-get clean
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Crear directorios necesarios
+# Paso 2 - Crear directorios necesarios
 RUN mkdir -p /var/www/html /run/php
 
-# Copia opcional de archivos de configuración personalizados
+# Paso 3 - Copiar configuraciones y scripts
 COPY ./conf/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY ./conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
 COPY ./conf/www.conf /usr/local/etc/php-fpm-www.conf
@@ -23,8 +23,8 @@ COPY ./conf/www.conf /usr/local/etc/php-fpm-www.conf
 COPY ./tools/wp_setup.sh /usr/local/bin/wp_setup.sh
 RUN chmod +x /usr/local/bin/wp_setup.sh
 
-# Declarar el puerto (informativo)
+# Paso 4 - Puerto expuesto (informativo)
 EXPOSE 9000
 
-# Comando por defecto al arrancar el contenedor
+# Paso 5 - Comando de arranque
 CMD ["bash", "/usr/local/bin/wp_setup.sh"]
